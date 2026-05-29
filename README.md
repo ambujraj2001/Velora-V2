@@ -1,81 +1,91 @@
 # Velora
 
-Multi-tenant AI chat-over-data platform. Connect a PostgreSQL or MongoDB database and ask questions in natural language.
+Ask questions about your database in plain English. Velora connects to PostgreSQL or MongoDB, learns your schema, and answers with real SQL — no hallucinated tables or fake numbers.
 
-## Quick start (local)
+```
+You:  "What is the revenue per aircraft model?"
+Velora: runs the query → shows a table + the SQL used
+```
 
-1. `cp .env.example .env`
-   - Fill in your `NVIDIA_API_KEY`
-   - Generate `ENCRYPTION_KEY`:
-     ```bash
-     python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-     ```
+---
 
-2. `docker-compose up -d`
-   - Starts Postgres + pgvector on localhost:5432
+## What's in this repo
 
-3. `pip install -r requirements.txt`
+| Folder | What it is |
+|--------|------------|
+| **`querymind/`** | Backend (FastAPI) + UI (React). This is the app. |
+| **`querymind/sample-data/`** | Demo Emirates airline database — Docker + seed SQL for testing |
 
-4. `./dev` (or `python3 -m app.dev`)
-   - Dev server config lives in `pyproject.toml` under `[tool.uvicorn]`
-   - Auto-reloads on `.py`, `.env`, and prompt `.txt` changes
-   - App reads `DATABASE_URL` from `.env` automatically
+All setup and docs live in **`querymind/README.md`**.
 
-## UI app
+---
+
+## Quick start (5 minutes)
+
+You need **Docker**, **Python 3.11+**, **Node.js**, and an [NVIDIA API key](https://build.nvidia.com/models).
+
+### 1. Platform database (Velora's own storage)
 
 ```bash
-cd ui-app
+cd querymind
+docker compose up -d
+```
+
+Runs Postgres + pgvector on **port 5432**.
+
+### 2. Sample tenant database (optional — for testing chat)
+
+```bash
+cd querymind/sample-data
+docker compose up -d
+docker exec -i emirates-db psql -U emirates -d emirates < emirates_seed.sql
+```
+
+Runs the Emirates demo DB on **port 5435**. See [sample-data guide](querymind/sample-data/add-data.md) for DBeaver steps.
+
+### 3. Backend
+
+```bash
+cd querymind
+cp .env.example .env
+# Edit .env — add NVIDIA_API_KEY and generate ENCRYPTION_KEY
+pip install -r requirements.txt
+./dev
+```
+
+API: http://127.0.0.1:8000
+
+### 4. UI
+
+```bash
+cd querymind/ui-app
 cp .env.example .env
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173 — the Vite dev server proxies API calls to `http://127.0.0.1:8000`.
+Open http://localhost:5173
 
-Run the backend first: `./dev` or `python3 -m app.dev`
+---
 
-## Switch to production database
+## Connect the sample DB in Velora
 
-Change `DATABASE_URL` in `.env` to your production Postgres URL.
-Restart the app. Zero code changes needed.
+After signing up in the UI, connect this connection string:
 
-## API flow — in order
+```
+postgresql://emirates:emirates123@localhost:5435/emirates
+```
 
-1. `POST /tenants` — create account (name, email, password) → get `api_key`
-2. `POST /auth/login` — sign in (email, password) → get fresh `api_key`
-3. `POST /connections/{tenant_id}` — connect Postgres or MongoDB
-4. `POST /onboard/{tenant_id}` — start schema indexing
-5. `GET /onboard/{tenant_id}/status` — poll until `status = "active"`
-6. `POST /chat/{tenant_id}` — start chatting
+Then run onboarding and start chatting. Try: *"Show me all Platinum tier passengers"*.
 
-All endpoints except `POST /tenants` and `POST /auth/login` require the `X-API-Key` header.
-
-## Supported databases
-
-- PostgreSQL (any version with public schema)
-- MongoDB (connection string must include database name)
+---
 
 ## Tech stack
 
-- **Backend:** FastAPI (Python 3.11+)
-- **Agent:** Deep Agents SDK (`deepagents`)
-- **LLM & Embeddings:** NVIDIA NIM via `langchain-nvidia-ai-endpoints`
-- **Vector DB:** pgvector on platform Postgres
-- **Logging:** Structured JSON logs via `structlog`, shipped to [Axiom](https://axiom.co) when configured
+FastAPI · Deep Agents · NVIDIA NIM (Llama 3.3 70B) · pgvector · React · Axiom logging
 
-## Logging (Axiom)
+---
 
-All requests, API steps, agent tool calls, and onboarding stages emit structured JSON logs.
+## Full documentation
 
-Add to `.env`:
-
-```env
-AXIOM_TOKEN=xaat-your-token-here
-AXIOM_DATASET=velora
-APP_ENV=production
-LOG_LEVEL=INFO
-```
-
-Create the `velora` dataset in your Axiom account before starting the app. If `AXIOM_TOKEN` is unset, logs still print to stdout as JSON.
-
-Every log includes `service`, `environment`, and (when available) `request_id` and `tenant_id`. HTTP responses include an `X-Request-ID` header for correlation.
+→ **[querymind/README.md](querymind/README.md)** — env vars, API flow, logging, models, troubleshooting
