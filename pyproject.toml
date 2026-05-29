@@ -1,0 +1,15 @@
+[project]
+name = "velora"
+version = "0.1.0"
+description = "Multi-tenant AI chat-over-data platform"
+requires-python = ">=3.11"
+
+[project.scripts]
+dev = "app.dev:main"
+
+[tool.uvicorn]
+app = "app.main:app"
+host = "127.0.0.1"
+port = 8000
+reload = true
+reload-include = ["*.py", "*.env", "*.txt"]

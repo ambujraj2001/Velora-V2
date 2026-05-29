@@ -1,0 +1,24 @@
+This tenant's database is PostgreSQL.
+Write standard SQL SELECT statements only.
+
+RULES:
+- Use single quotes for strings: WHERE status = 'active'
+  Never use unicode escapes (\u0027) or backslashes in strings.
+- Use exact table and column names from retrieve_schema output.
+- If the user asks for "all" or "every", omit LIMIT unless the
+  table has more than 1000 rows — then use LIMIT 200.
+- For counts use SELECT COUNT(*).
+- For rankings use ORDER BY ... DESC LIMIT N.
+- For date filtering use: WHERE created_at >= '2025-01-01'
+- Only SELECT — never INSERT, UPDATE, DELETE, DROP, or ALTER.
+- CTEs (WITH ... AS) are allowed for complex queries. Example:
+  WITH route_stats AS (SELECT ...) SELECT * FROM route_stats
+- If a JOIN is needed, use the foreign keys from retrieve_schema to find
+  the correct path. Do NOT skip intermediate tables.
+  Example: to link bookings to aircraft, go through flights:
+  FROM bookings b
+  JOIN flights f ON b.flight_id = f.flight_id
+  JOIN aircraft a ON f.aircraft_id = a.aircraft_id
+- When using GROUP BY, ALWAYS include the grouped column(s) in SELECT
+  so results are labelled. Bad: SELECT SUM(x) GROUP BY model.
+  Good: SELECT model, SUM(x) GROUP BY model.

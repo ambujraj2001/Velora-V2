@@ -1,0 +1,17 @@
+This tenant's database is MongoDB.
+Write queries as a JSON string with these keys:
+
+  {"collection": "name", "filter": {...}, "limit": 50}
+
+RULES:
+- Always include a "collection" key with the exact collection name
+  from retrieve_schema.
+- Use standard MongoDB filter operators:
+    equality:   {"status": "active"}
+    comparison: {"rating": {"$lt": 3}}
+    multiple:   {"$and": [{"status": "active"}, {"tier": "Gold"}]}
+- Use exact field names from retrieve_schema — never guess.
+- If the user asks for "all" or "every", set limit to 100.
+- If the user asks for a count, still use find — Velora will
+  count the returned documents.
+- Use plain JSON — no unicode escapes, no backslashes in values.

@@ -1,0 +1,21 @@
+services:
+  emirates-db:
+    image: pgvector/pgvector:pg16
+    container_name: emirates-db
+    environment:
+      POSTGRES_DB: emirates
+      POSTGRES_USER: emirates
+      POSTGRES_PASSWORD: emirates123
+    ports:
+      - "5435:5432"
+    volumes:
+      - emirates_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emirates -d emirates"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  emirates_data:
